@@ -1,6 +1,7 @@
 pipeline {
     agent none
     stages {
+
         stage('Maven Install') {
             agent {
                 docker {
@@ -10,6 +11,23 @@ pipeline {
             }
             steps {
                 sh 'mvn clean install'
+            }
+        }
+
+        stage('Docker Build') {
+            agent any
+            steps {
+                sh 'docker build -t valenguz/spring-petclinic:latest .'
+            }
+        }
+
+        stage('Docker Push') {
+            agent any
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerHub', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    sh "echo $PASS | docker login -u $USER --password-stdin"
+                    sh "docker push valenguz/spring-petclinic:latest"
+                }
             }
         }
     }
